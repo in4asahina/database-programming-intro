@@ -175,7 +175,7 @@ const eqD = (v,n,d) => { const x=numOf(v); return !isNaN(x) && Math.round(x*10**
 const CMD_BASE=[['表示','表示■テーブル名'],['選択','選択■フィールド名■キーワード'],['射影','射影■フィールド名1、フィールド名2、・・・'],['結合','結合■テーブル名']];
 const CMD_ALL=CMD_BASE.concat([['平均','平均■フィールド名■分類フィールド名'],['数える','数える■フィールド名'],['整列','整列■フィールド名■昇順 または 降順']]);
 const PAGES=[
-{ key:'q', tab:'1 コンビニ', db:'コンビニ',
+{ key:'q', tab:'コンビニ', db:'コンビニ',
   tables:[['商品データ','商品の情報','「商品コード」「商品名」「内容量」「メーカー」「価格」'],
           ['売上データ','商品が売れた日時と客の情報','「商品コード」「売上日」「曜日」「時間帯」「性別」「年齢層」']],
   cmds:CMD_BASE,
@@ -190,7 +190,7 @@ const PAGES=[
    rows:2, in:[{k:'t',label:'商品名'},{k:'t',label:'性別',w:'s'},{k:'t',label:'年齢層',w:'s'}],
    ans:[[['ゆずヌードル'],['男'],['熟年']],[['坦々ヌードル','担々ヌードル','坦坦ヌードル','担担ヌードル'],['女'],['成年']]]}
   ]},
-{ key:'r', tab:'2 生徒名簿', db:'生徒名簿',
+{ key:'r', tab:'生徒名簿', db:'生徒名簿',
   tables:[['生徒データ','基本的な生徒の情報','「生徒番号」「クラス」「番号」「名前」「性別」「住所」「出身中学」'],
           ['生徒成績データ','それぞれの成績','「生徒番号」「外国語」「数学」「国語」「理科」「社会」'],
           ['選択科目データ','生徒が選択している科目','「生徒番号」「芸術選択」「文理選択」「社会選択」「理科選択」'],
@@ -209,7 +209,7 @@ const PAGES=[
   {text:'クラブ毎の、数学の平均を求め、バレー部の平均点を書け', in:[{k:'n',label:'平均点',unit:'点'}], check:v=>eqD(v[0],38.75,2)},
   {text:'社会の平均を科目ごと（地理や日本史）に求め、日本史の平均点を書け（小数第2位まで）', in:[{k:'n',label:'平均点',unit:'点'}], check:v=>eqD(v[0],65.19,2)}
   ]},
-{ key:'s', tab:'3 図書館', db:'図書館',
+{ key:'s', tab:'図書館', db:'図書館',
   tables:[['図書データ','図書の情報','「図書番号」「書名」「著者番号」「分類番号」'],
           ['著者データ','著者の情報','「著者番号」「著者名」'],
           ['分類データ','図書の分類','「分類番号」「分類」'],
@@ -224,7 +224,7 @@ const PAGES=[
    rows:3, rl:'つ目', in:[{k:'t',label:'書名'}], ans:[[['かもめ']],[['家なき子']],[['手袋を買いに']]]},
   {text:'この図書館で、一番貸出冊数の多い著者の名前は何か。（ヒント：貸出冊数の多い著者の順に並べる。）', in:[{k:'t',label:'著者名',w:'s'}], check:v=>eqT(v[0],['寺田寅彦'])}
   ]},
-{ key:'u', tab:'4 レンタル', db:'レンタル',
+{ key:'u', tab:'レンタル', db:'レンタル',
   tables:[['貸出データ','レンタルの記録','「貸出番号」「顧客番号」「貸出月」「貸出日」「商品番号」'],
           ['顧客データ','会員（顧客）の情報','「顧客番号」「顧客名」「性別」「会員種別」「住所」'],
           ['商品データ','レンタル商品の情報','「商品番号」「種別」「種類」「分野」「タイトル」']],
@@ -284,7 +284,7 @@ function build(){
   document.querySelector('.foot').style.display=cur===DASH?'none':'';
   if(cur===DASH){ document.getElementById('ansbtn').innerHTML=''; document.getElementById('anslist').innerHTML=''; document.getElementById('page').innerHTML=renderDash(); document.getElementById('nextp').innerHTML=''; return; }
   const P=PAGES[cur], K=P.key;
-  let h=`<div class="dbrow"><h2 class="dbt">プリセットDB：「<b>${P.db}</b>」</h2><span class="score" id="score" aria-live="polite"></span></div>
+  let h=`<div class="dbrow"><h2 class="dbt"><b>${P.db}</b></h2><span class="score" id="score" aria-live="polite"></span></div>
   <p class="lead"><span class="box">テーブル一覧</span></p>
   <table class="ws"><thead><tr><th style="width:9em">テーブル名</th><th style="white-space:nowrap">内容</th><th>フィールド名</th></tr></thead>
   <tbody>${P.tables.map(r=>`<tr><td class="c">${r[0]}</td><td style="white-space:nowrap">${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</tbody></table>
