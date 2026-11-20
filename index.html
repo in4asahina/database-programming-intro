@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>データベースプログラミング入門</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=BIZ+UDGothic:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E3EDF7; --grid:rgba(40,105,170,.20); --paper:#FFFEFB; --ink:#2A2540; --muted:#6B6580;
+  --line:#DCD5E6; --in:#ECE7FB; --in-edge:#7B66D9; --ok:#23866A; --ng:#C8384E; --focus:#6A4FD0;
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  background-image:radial-gradient(circle,var(--grid) 1.5px,transparent 1.9px),radial-gradient(circle,var(--grid) 1.5px,transparent 1.9px);
+  background-size:26px 26px;background-position:0 0,13px 13px;
+  font-family:"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo",sans-serif;font-size:16px;line-height:1.7}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.wrap{max-width:940px;margin:0 auto;padding:24px 16px 40px}
+.sheet{background:var(--paper);border:1px solid var(--line);border-top:5px solid var(--in-edge);border-radius:14px;padding:22px 26px 28px}
+.head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 4px}
+h1{margin:0;font-size:2.25rem;letter-spacing:.04em;line-height:1.3}
+.head .sub{color:var(--muted);font-weight:700}
+.score{margin-left:auto;font-weight:700;color:var(--muted);font-size:1.05rem}
+.score.clear{color:var(--ok)}
+.sa{display:inline-block;margin-left:10px;font-size:.85rem;font-weight:700;color:var(--ink);text-decoration:none;border:2px solid var(--ink);border-radius:8px;padding:2px 10px}
+
+/* 命令・テーブルの表（ワークシートと同じ形） */
+table.ws{border-collapse:collapse;width:100%;margin:10px 0 18px;font-size:.95rem}
+.ws th,.ws td{border:1px solid #9a96a6;padding:4px 10px;vertical-align:middle}
+.ws th{background:#e9e8ee;font-weight:400;text-align:center}
+.ws td.c{text-align:center}
+.ws td.cmd{font-family:"BIZ UDGothic",monospace;font-weight:700}
+.sp{display:inline-block;width:.62em;height:.62em;background:var(--ink);margin:0 .3em;vertical-align:middle}
+.note{color:var(--muted);font-size:.85rem;margin:-12px 0 10px;text-align:right}
+
+/* 練習問題 */
+.lead{margin:18px 0 6px;font-weight:700;font-size:1.05rem}
+.dbrow{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 4px}
+.dbt b{font-weight:700}
+.dbt{font-weight:400;margin:0;font-size:1.6875rem;line-height:1.35;letter-spacing:.03em}
+.lead .box{display:inline-block;border:2px solid var(--ink);padding:0 6px;margin-right:4px}
+.q{display:grid;grid-template-columns:3.2em minmax(0,1fr);gap:4px 10px;align-items:start;padding:10px 2px;border-top:1px solid var(--line)}
+.lead+.q{border-top:0}
+.note+.lead{margin-top:-10px}
+.q .no{font-weight:700}
+.q .text{margin:0}
+.ans{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:6px}
+.ans .mk{margin-left:-6px}
+.f{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.f .lb{font-size:.85rem;color:var(--muted);font-weight:700}
+input.in{height:2.2rem;border:2px solid var(--in-edge);background:var(--in);border-radius:7px;font-weight:700;padding:0 8px;width:12rem}
+input.in.n{width:5.5rem;text-align:center;font-family:"BIZ UDGothic",monospace}
+input.in.s{width:7rem}
+input.in::placeholder{color:var(--muted);font-weight:400}
+input.in:focus::placeholder{color:transparent}
+.mk{display:inline-block;width:1.6em;text-align:center;font-weight:700;font-size:1.25rem;line-height:2.2rem}
+.mk.ok{color:var(--ok)}.mk.ng{color:var(--ng)}
+.rows{display:grid;gap:6px;margin-top:6px}
+.rows .r{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.rows .r .rn{font-size:.85rem;color:var(--muted);font-weight:700;width:3.2em}
+.foot{display:flex;justify-content:flex-end;margin-top:10px}
+.linkbtn{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.85rem}
+@media (max-width:600px){h1{font-size:1.6rem}.dbt{font-size:1.2rem}.sheet{padding:16px 14px 20px}.q{grid-template-columns:2.8em minmax(0,1fr)}.ws{font-size:.85rem}}
+.pager{display:flex;gap:6px;margin:6px 0 14px;flex-wrap:wrap}
+.pager button{border:2px solid var(--ink);background:var(--paper);border-radius:8px;padding:2px 12px;font-weight:700;cursor:pointer;font-size:.9rem}
+.pager button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.pager .st{font-size:.8rem;margin-left:4px;opacity:.8}
+.nextp{display:flex;justify-content:flex-end;margin-top:14px}
+.btn{border:2px solid var(--ink);background:var(--ink);color:var(--paper);border-radius:10px;padding:6px 18px;font-weight:700;cursor:pointer}
+/* ★ ダッシュボード */
+.pager button.dash{padding:2px 10px}
+.dprow{display:grid;grid-template-columns:9em minmax(0,1fr) 9.5em;gap:12px;align-items:center;padding:8px 2px 2px}
+.dprow .dpname{justify-self:start;border:2px solid var(--ink);background:var(--paper);border-radius:8px;padding:2px 12px;font-weight:700;cursor:pointer;font-size:.9rem;white-space:nowrap}
+.meter{display:block;height:14px;border-radius:7px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--ok);transition:width .3s}
+.dpc{font-family:"BIZ UDGothic",monospace;font-weight:700;text-align:right;white-space:nowrap}
+.dpc b{font-size:1.25rem}
+.chips{display:flex;flex-wrap:wrap;gap:5px;padding:4px 2px 10px calc(9em + 14px);border-bottom:1px solid var(--line)}
+.chip{min-width:3.1em;height:1.75em;padding:0 6px;border-radius:6px;border:2px solid var(--line);background:var(--paper);font-size:.8rem;font-weight:700;display:inline-grid;place-items:center;color:var(--muted)}
+.chip.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.chip.ng{border-color:var(--ng);color:var(--ng)}
+.dlegend{font-size:.82rem;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap;margin:2px 0 4px}
+.dlegend .chip{min-width:1.6em;height:1.3em;vertical-align:middle;margin-right:3px}
+@media (max-width:600px){.dprow{grid-template-columns:1fr 6.5em}.dprow .meter{grid-column:1 / 3;grid-row:2}.chips{padding-left:2px}}
+/* 振り返り */
+.rlab{display:block;font-weight:700;margin:8px 0 4px}
+.reftxt{width:100%;border:2px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--paper);color:var(--ink);font:inherit;resize:vertical}
+.reftxt:focus{border-color:var(--in-edge)}
+/* 保存 */
+.snote{color:var(--muted);font-size:.9rem;margin:2px 0 10px}
+.btn.sm{padding:3px 12px;font-size:.9rem}
+.btn.light{background:var(--paper);color:var(--ink)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.cmsg{font-weight:700;margin-left:10px}.cmsg.ok{color:var(--ok)}.cmsg.ng{color:var(--ng)}
+.saveid-l{font-weight:700;color:var(--muted);font-size:.9rem;margin-top:14px}
+.saveid{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0}
+.saveid b{font-family:"BIZ UDGothic",monospace;font-size:1.8rem;letter-spacing:.12em;padding:2px 12px;border:2px solid var(--ok);border-radius:8px;color:var(--ok);background:var(--paper)}
+.saveid span{color:var(--muted);font-size:.85rem}
+.saveurl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0}
+.saveurl input{flex:1 1 260px;min-width:0;border:2px solid var(--line);border-radius:8px;padding:6px 10px;font-family:"BIZ UDGothic",monospace;font-size:.85rem;background:var(--paper)}
+.unsaved{margin:6px 0 0;padding:6px 10px;border-radius:8px;background:#fdf0dc;font-size:.9rem}
+.loadbox{margin-top:14px;border-top:1px dashed var(--line);padding-top:8px}
+.loadbox summary{cursor:pointer;font-weight:700;font-size:.92rem}
+.loadbox .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.loadbox input{width:11rem;border:2px solid var(--in-edge);border-radius:8px;padding:4px 10px;font-family:"BIZ UDGothic",monospace;font-size:1.05rem;letter-spacing:.08em;background:var(--in)}
+.cmodal{position:fixed;inset:0;z-index:90;display:none;place-items:center;background:rgba(25,18,40,.4);padding:16px}
+.cmodal.show{display:grid}
+.cm-box{background:var(--paper);border-radius:14px;padding:20px 22px;max-width:440px;width:100%;box-shadow:0 18px 40px rgba(0,0,0,.25)}
+.cm-box h3{margin:0 0 8px;font-size:1.1rem}
+.cm-box p{margin:0 0 16px}
+.cm-btns{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+/* トップページ */
+body:not(.is-top) #top{display:none}
+body.is-top .wrap{display:none}
+#top{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:32px 20px}
+.top-in{width:100%;max-width:1000px;text-align:center}
+.top-sub{margin:0 0 10px;color:var(--muted);font-weight:700;letter-spacing:.06em}
+.top-ttl{margin:0;font-size:clamp(1.4rem,5.8vw,3.4rem);line-height:1.2;letter-spacing:.02em;white-space:nowrap}
+.top-lead{margin:20px auto 44px;font-size:1.05rem}
+.top-dbs{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin:-24px 0 40px}
+.top-dbs span{border:2px solid var(--line);background:var(--paper);border-radius:8px;padding:2px 12px;font-weight:700;font-size:.9rem}
+.btn.start{font-size:1.25rem;padding:14px 44px;border-radius:12px;transition:transform .18s ease}
+.btn.start:hover,.btn.start:focus-visible{transform:scale(1.08)}
+.top-note{margin:14px 0 0;color:var(--muted);font-size:.9rem}
+@media (max-width:720px){.pc-br{display:none}}
+h1#apptitle{cursor:pointer}
+@media print{body{background:#fff}.sheet{border:0}.foot,.sa,.pager,.nextp{display:none}}
+</style>
+</head>
+<body>
+<section id="top" aria-label="トップ"><div class="top-in">
+  <h1 class="top-ttl">データベースプログラミング入門</h1>
+  <p class="top-lead">データベース実習支援ツールsAccessを用いて、<br>選択・射影・結合や集計の命令で、データベースから目的のデータを取り出そう。</p>
+  <button type="button" class="btn start" id="start">はじめる</button>
+</div></section>
+<div class="wrap">
+<div class="head"><h1 id="apptitle" title="トップページへ">データベースプログラミング入門</h1></div>
+<nav class="pager" id="pager" aria-label="ページ"></nav>
+<div class="sheet">
+  <div id="page"></div>
+  <div class="foot"><button class="linkbtn" id="reset" type="button">このページの答えを消して最初からやり直す</button></div>
+</div>
+<div class="nextp" id="nextp"></div>
+</div>
+
+<script>
+/* ============ 答えの判定に使う関数 ============ */
+/* 文字：全角・半角、大文字・小文字、空白やかっこのちがいは区別しない */
+const normT = v => String(v==null?'':v).normalize('NFKC').toLowerCase().replace(/[\s「」『』"'“”‘’、，,。．・]/g,'');
+const eqT = (v,alts) => normT(v)!=='' && alts.some(a=>normT(a)===normT(v));
+/* 数：後ろに「件」「点」などの単位を付けてもよい */
+const numOf = v => { const t=normT(v).replace(/(件|個|冊|台|点|回|人|行|円|つ)$/,''); return /^(0|[1-9]\d{0,6})(\.\d+)?$/.test(t) ? parseFloat(t) : NaN; };
+const eqN = (v,n) => numOf(v)===n;
+/* 小数：正解のけた数で四捨五入して一致すれば正解（例：61.3 の問題で 61.33 と書いても正解） */
+const eqD = (v,n,d) => { const x=numOf(v); return !isNaN(x) && Math.round(x*10**d)===Math.round(n*10**d); };
+
+/* ============ ページのデータ ============
+   tables：テーブルの表 [テーブル名, 内容, フィールド名]
+   cmds：コマンド一覧 [演算名, 命令（■はスペース）]
+   Q：問題。in＝解答欄（k:'n'数／'t'文字、label＝欄の名前、unit＝単位、w:'s'＝短い欄）、check＝正解なら true */
+const CMD_BASE=[['表示','表示■テーブル名'],['選択','選択■フィールド名■キーワード'],['射影','射影■フィールド名1、フィールド名2、・・・'],['結合','結合■テーブル名']];
+const CMD_ALL=CMD_BASE.concat([['平均','平均■フィールド名■分類フィールド名'],['数える','数える■フィールド名'],['整列','整列■フィールド名■昇順 または 降順']]);
+const PAGES=[
+{ key:'q', tab:'1 コンビニ', db:'コンビニ',
+  tables:[['商品データ','商品の情報','「商品コード」「商品名」「内容量」「メーカー」「価格」'],
+          ['売上データ','商品が売れた日時と客の情報','「商品コード」「売上日」「曜日」「時間帯」「性別」「年齢層」']],
+  cmds:CMD_BASE,
+  Q:[
+  {text:'「ユウヒ飲料」の商品のみを表示させたとき、レコード数は？', in:[{k:'n',label:'レコード数',unit:'件'}], check:v=>eqN(v[0],2)},
+  {text:'「やまと製茶園」の商品のうち、150円の商品を表示したとき3行目の商品コードを答えなさい。', in:[{k:'t',label:'商品コード',w:'s'}], check:v=>eqT(v[0],['J0940'])},
+  {text:'商品データについて、商品名と価格だけを表示させたとき、14行目をすべて答えなさい。', in:[{k:'t',label:'商品名'},{k:'n',label:'価格',unit:'円'}], check:v=>eqT(v[0],['麦茶'])&&eqN(v[1],140)},
+  {text:'商品データ全体中で、価格が150円のデータを選び、商品名、内容量、メーカーを表示させたとき、7行目をすべて答えなさい。', in:[{k:'t',label:'商品名'},{k:'t',label:'内容量',w:'s'},{k:'t',label:'メーカー'}], check:v=>eqT(v[0],['ローズティー'])&&eqT(v[1],['500ml'])&&eqT(v[2],['やまと製茶園'])},
+  {text:'売上データ上の、「銀河製菓」の商品について、売れた商品は、全部で何件か。', in:[{k:'n',label:'件数',unit:'件'}], check:v=>eqN(v[0],50)},
+  {text:'日曜日に売れたラビット乳業の商品は全部で何件か。', in:[{k:'n',label:'件数',unit:'件'}], check:v=>eqN(v[0],3)},
+  {text:'「みずうみ製麺」の商品のうち、金曜日に売れた商品について、商品名、性別、年齢層は何か。すべて答えなさい（順番は問わない）。',
+   rows:2, in:[{k:'t',label:'商品名'},{k:'t',label:'性別',w:'s'},{k:'t',label:'年齢層',w:'s'}],
+   ans:[[['ゆずヌードル'],['男'],['熟年']],[['坦々ヌードル','担々ヌードル','坦坦ヌードル','担担ヌードル'],['女'],['成年']]]}
+  ]},
+{ key:'r', tab:'2 生徒名簿', db:'生徒名簿',
+  tables:[['生徒データ','基本的な生徒の情報','「生徒番号」「クラス」「番号」「名前」「性別」「住所」「出身中学」'],
+          ['生徒成績データ','それぞれの成績','「生徒番号」「外国語」「数学」「国語」「理科」「社会」'],
+          ['選択科目データ','生徒が選択している科目','「生徒番号」「芸術選択」「文理選択」「社会選択」「理科選択」'],
+          ['クラブデータ','生徒の所属クラブ','「生徒番号」「クラブ」']],
+  cmds:CMD_BASE.concat([['平均','平均■フィールド名■分類フィールド名']]),
+  Q:[
+  {text:'住所が「伊倉町」の生徒を表示し、レコード数を書け', in:[{k:'n',label:'レコード数',unit:'件'}], check:v=>eqN(v[0],4)},
+  {text:'男子生徒について、名前と出身中学を表示し、3番目のレコードの内容を書け', in:[{k:'t',label:'名前',w:'s'},{k:'t',label:'出身中学'}], check:v=>eqT(v[0],['北条聡'])&&eqT(v[1],['一宮第二中学','一宮第二中学校'])},
+  {text:'書道を選択している生徒を表示し、5番目のレコードの生徒の名前を書け', in:[{k:'t',label:'名前',w:'s'}], check:v=>eqT(v[0],['津軽清'])},
+  {text:'バスケット部の男子生徒を表示し、レコード数を書け', in:[{k:'n',label:'レコード数',unit:'件'}], check:v=>eqN(v[0],15)},
+  {text:'生徒の成績を表示し、6番目のレコードの生徒の社会の点数を書け', in:[{k:'n',label:'社会の点数',unit:'点'}], check:v=>eqN(v[0],52)},
+  {text:'理科の平均点を求めよ', in:[{k:'n',label:'平均点',unit:'点'}], check:v=>eqD(v[0],63.8,1)},
+  {text:'バスケット部で理系の生徒を表示し、5番目のレコードの生徒番号を書け', in:[{k:'n',label:'生徒番号'}], check:v=>eqN(v[0],12112)},
+  {text:'バスケット部の生徒について、名前と芸術選択を表示し10番目のレコードの内容を書け', in:[{k:'t',label:'名前',w:'s'},{k:'t',label:'芸術選択',w:'s'}], check:v=>eqT(v[0],['吉川浩之'])&&eqT(v[1],['音楽'])},
+  {text:'外国語のクラスごとの平均を求め、1組の平均点を書け', in:[{k:'n',label:'平均点',unit:'点'}], check:v=>eqD(v[0],61.3,1)},
+  {text:'クラブ毎の、数学の平均を求め、バレー部の平均点を書け', in:[{k:'n',label:'平均点',unit:'点'}], check:v=>eqD(v[0],38.75,2)},
+  {text:'社会の平均を科目ごと（地理や日本史）に求め、日本史の平均点を書け（小数第2位まで）', in:[{k:'n',label:'平均点',unit:'点'}], check:v=>eqD(v[0],65.19,2)}
+  ]},
+{ key:'s', tab:'3 図書館', db:'図書館',
+  tables:[['図書データ','図書の情報','「図書番号」「書名」「著者番号」「分類番号」'],
+          ['著者データ','著者の情報','「著者番号」「著者名」'],
+          ['分類データ','図書の分類','「分類番号」「分類」'],
+          ['貸出データ','図書の貸出の記録','「貸出番号」「図書番号」「生徒番号」「貸出月」「貸出日」'],
+          ['生徒データ','図書館を利用する生徒の情報','「生徒番号」「学年」「クラス」「番号」「名前」「性別」「住所」']],
+  cmds:CMD_ALL,
+  Q:[
+  {text:'この図書館の6月の貸出冊数は何か。（ヒント：月毎の貸出冊数を数える）', in:[{k:'n',label:'貸出冊数',unit:'冊'}], check:v=>eqN(v[0],44)},
+  {text:'この図書館で、一番、貸出冊数の多い生徒の名前は何か。（ヒント：生徒毎の貸出冊数を数えて、大きい順に並べる。）', in:[{k:'t',label:'名前',w:'s'}], check:v=>eqT(v[0],['松山弘'])},
+  {text:'この図書館で、一番、貸出冊数の多い図書の名前は何か。（ヒント：図書毎の貸出冊数を数えて、大きい順に並べてみましょう。）', in:[{k:'t',label:'書名'}], check:v=>eqT(v[0],['ルクレチウスと科学'])},
+  {text:'この図書館で、4月に最も貸出冊数の多い図書の名前をすべて書きなさい（順番は問わない）。（ヒント：図書毎の貸出冊数を数えて、大きい順に並べる。）',
+   rows:3, rl:'つ目', in:[{k:'t',label:'書名'}], ans:[[['かもめ']],[['家なき子']],[['手袋を買いに']]]},
+  {text:'この図書館で、一番貸出冊数の多い著者の名前は何か。（ヒント：貸出冊数の多い著者の順に並べる。）', in:[{k:'t',label:'著者名',w:'s'}], check:v=>eqT(v[0],['寺田寅彦'])}
+  ]},
+{ key:'u', tab:'4 レンタル', db:'レンタル',
+  tables:[['貸出データ','レンタルの記録','「貸出番号」「顧客番号」「貸出月」「貸出日」「商品番号」'],
+          ['顧客データ','会員（顧客）の情報','「顧客番号」「顧客名」「性別」「会員種別」「住所」'],
+          ['商品データ','レンタル商品の情報','「商品番号」「種別」「種類」「分野」「タイトル」']],
+  cmds:CMD_ALL,
+  Q:[
+  {text:'商品番号が「A0894」の商品の貸出回数は何か。', in:[{k:'n',label:'貸出回数',unit:'回'}], check:v=>eqN(v[0],6)},
+  {text:'4月にレンタルされた商品のうち、商品番号「T1694」の商品の貸出回数は何か。', in:[{k:'n',label:'貸出回数',unit:'回'}], check:v=>eqN(v[0],4)},
+  {text:'商品番号「E4173」の商品について、一番、最後に借りた人の顧客番号と貸出月は何か。', in:[{k:'n',label:'顧客番号'},{k:'n',label:'貸出月',unit:'月'}], check:v=>eqN(v[0],2007002)&&eqN(v[1],4)},
+  {text:'3月に貸し出された商品のうち、分野が「恋愛」、種類が「映画」の商品のタイトルは何か。すべて書きなさい（順番は問わない）。',
+   rows:2, rl:'つ目', in:[{k:'t',label:'タイトル'}], ans:[[['天使とラブラブ']],[['アラビアンなナイト']]]},
+  {text:'4月に貸し出されたコミックのタイトルは何か。すべて書きなさい（順番は問わない）。',
+   rows:3, rl:'つ目', in:[{k:'t',label:'タイトル'}], ans:[[['蜜柑','密柑']],[['大きな栗の木の下で']],[['方文記']]]},
+  {text:'貸し出された商品のうち、アニメでキッズの商品のうち、一番貸し出されている商品のタイトルは何か。', in:[{k:'t',label:'タイトル'}], check:v=>eqT(v[0],['一瞬のヒーロー'])},
+  {text:'2月に、女性の顧客にレンタルされた商品は何件か。', in:[{k:'n',label:'件数',unit:'件'}], check:v=>eqN(v[0],38)},
+  {text:'4月にレンタルされた商品で恋愛分野の商品について、女性と男性とでは、どちらに多くレンタルされたか。', in:[{k:'t',label:'女性か男性か',w:'s'}], check:v=>eqT(v[0],['男性','男'])},
+  {text:'3月のレンタル商品で男性の顧客の借りている商品について、最も多くレンタルされている商品の分野は何か。', in:[{k:'t',label:'分野',w:'s'}], check:v=>eqT(v[0],['恋愛'])},
+  {text:'1月に商品をレンタルした女性について、最も多い会員種別は何か。', in:[{k:'t',label:'会員種別',w:'s'}], check:v=>eqT(v[0],['月額B'])}
+  ]}
+];
+/* 順番を問わない行の答え：入力した行ごとに、まだ使っていない正解と一致するか */
+function rowsOk(rows,ans){
+  const used=ans.map(()=>false);
+  return rows.map(r=>{ const k=ans.findIndex((a,j)=>!used[j]&&a.every((alts,c)=>eqT(r[c],alts))); if(k<0) return false; used[k]=true; return true; });
+}
+
+/* ============ 保存（この端末のブラウザに自動で保存） ============ */
+const KEY='db-programming-intro-v1';
+let A={};
+try{ A=JSON.parse(localStorage.getItem(KEY)||'{}')||{}; }catch(e){ A={}; }
+const save=()=>{ try{ localStorage.setItem(KEY,JSON.stringify(A)); }catch(e){} };
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* 保存IDなど（この端末に記録） */
+const MKEY='db-programming-intro-meta';
+let M={saveId:'',savedAt:'',unsaved:false};
+try{ M=Object.assign(M,JSON.parse(localStorage.getItem(MKEY)||'{}')); }catch(e){}
+const saveM=()=>{ try{ localStorage.setItem(MKEY,JSON.stringify(M)); }catch(e){} };
+/* 表示するページ：URLの #1〜#4 で各ページ、#dash でダッシュボード */
+const DASH=PAGES.length;
+function pageFromHash(){ const h=location.hash; const m=h.match(/^#([1-9])$/); if(m) return Math.min(+m[1]-1,PAGES.length-1); if(h==='#dash') return DASH;
+  /* 保存IDのURLのときは、前に開いていたページ */
+  if(M.saveId&&h.slice(1).toLowerCase()===M.saveId) return Math.min(M.cur||0,DASH); return 0; }
+let cur=pageFromHash();
+
+/* ============ 画面を作る ============ */
+const sp=s=>esc(s).split('■').join('<span class="sp"></span>');
+const inp=(id,f)=>`<input class="in${f.k==='n'?' n':''}${f.w?' '+f.w:''}" id="${id}" data-id="${id}" autocomplete="off" maxlength="30" placeholder="${f.k==='n'?'？':f.label}" aria-label="${f.label}" value="${esc(A[id]||'')}"${f.k==='n'?' inputmode="decimal"':''}>`;
+function build(){
+  document.getElementById('pager').innerHTML=PAGES.map((p,i)=>`<button type="button" data-page="${i}" aria-pressed="${i===cur}">${p.tab}</button>`).join('')+`<button type="button" class="dash" data-page="${DASH}" aria-pressed="${cur===DASH}" title="ダッシュボード" aria-label="ダッシュボード">★</button>`;
+  document.querySelector('.foot').style.display=cur===DASH?'none':'';
+  if(cur===DASH){ document.getElementById('page').innerHTML=renderDash(); document.getElementById('nextp').innerHTML=''; return; }
+  const P=PAGES[cur], K=P.key;
+  let h=`<div class="dbrow"><h2 class="dbt">プリセットDB：「<b>${P.db}</b>」</h2><span class="score" id="score" aria-live="polite"></span></div>
+  <p class="lead"><span class="box">テーブル一覧</span></p>
+  <table class="ws"><thead><tr><th style="width:9em">テーブル名</th><th style="white-space:nowrap">内容</th><th>フィールド名</th></tr></thead>
+  <tbody>${P.tables.map(r=>`<tr><td class="c">${r[0]}</td><td style="white-space:nowrap">${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</tbody></table>
+  <p class="lead"><span class="box">コマンド一覧</span></p>
+  <table class="ws"><thead><tr><th style="width:9em">演算名</th><th>命令</th></tr></thead>
+  <tbody>${P.cmds.map(r=>`<tr><td class="c">${r[0]}</td><td class="cmd">${sp(r[1])}</td></tr>`).join('')}</tbody></table>
+  <p class="note"><span class="sp" style="margin-left:0"></span>はスペースを表す</p>
+  <p class="lead"><span class="box">練習問題</span></p>`;
+  h+=P.Q.map((q,i)=>{
+    let ans;
+    if(q.rows){
+      ans=`<div class="rows">${[...Array(q.rows)].map((_,r)=>`<div class="r"><span class="rn">${r+1}${q.rl||'件目'}</span>${q.in.map((f,c)=>`<span class="f">${inp(`${K}${i}_${r}_${c}`,f)}</span>`).join('')}<span class="mk" id="mk${i}_${r}"></span></div>`).join('')}</div>`;
+    }else{
+      ans=`<div class="ans">${q.in.map((f,c)=>`<span class="f">${q.in.length>1?`<span class="lb">${f.label}</span>`:''}${inp(`${K}${i}_${c}`,f)}${f.unit?`<span>${f.unit}</span>`:''}</span>`).join('')}<span class="mk" id="mk${i}"></span></div>`;
+    }
+    return `<div class="q"><span class="no">問${i+1}</span><div><p class="text">${q.text}</p>${ans}</div></div>`;
+  }).join('');
+  document.getElementById('page').innerHTML=h;
+  document.getElementById('nextp').innerHTML=cur<PAGES.length-1?`<button type="button" class="btn" data-page="${cur+1}">次のページへ（${PAGES[cur+1].tab}） →</button>`:`<button type="button" class="btn" data-page="${DASH}">ダッシュボードへ（★） →</button>`;
+  judge();
+}
+/* ページ i の正解数 */
+const val=id=>A[id]||'';
+const has=v=>normT(v)!=='';
+function qResult(pi,i){
+  const P=PAGES[pi], q=P.Q[i], K=P.key;
+  if(q.rows){ const rows=[...Array(q.rows)].map((_,r)=>q.in.map((_,c)=>val(`${K}${i}_${r}_${c}`))); const ok=rowsOk(rows,q.ans); return {rows,ok,all:ok.every(Boolean)}; }
+  const v=q.in.map((_,c)=>val(`${K}${i}_${c}`)); return {v,all:q.check(v)};
+}
+const score=pi=>PAGES[pi].Q.filter((_,i)=>qResult(pi,i).all).length;
+function setMk(id,filled,ok){ const el=document.getElementById(id); if(!el) return; el.className='mk'+(filled?(ok?' ok':' ng'):''); el.textContent=filled?(ok?'○':'×'):''; el.setAttribute('aria-label',filled?(ok?'正解':'不正解'):''); }
+/* 正誤判定：その問題の欄をすべて入力したら○×を出す */
+function judge(){
+  if(cur===DASH) return;
+  const P=PAGES[cur];
+  P.Q.forEach((q,i)=>{
+    const R=qResult(cur,i);
+    if(q.rows) R.rows.forEach((r,k)=>setMk(`mk${i}_${k}`,r.every(has),R.ok[k]));
+    else setMk(`mk${i}`,R.v.every(has),R.all);
+  });
+  const n=score(cur), N=P.Q.length, sc=document.getElementById('score');
+  sc.textContent=n===N?`全問正解！（${n} / ${N}）`:`正解 ${n} / ${N}`;
+  sc.className='score'+(n===N?' clear':'');
+}
+function go(i){ cur=i; M.cur=i; saveM(); setHash(); build(); window.scrollTo({top:0}); }
+/* URLの#：保存IDがあれば保存ID、なければページ番号 */
+function setHash(){ try{ history.replaceState(null,'',location.pathname+location.search+'#'+(M.saveId||(cur===DASH?'dash':String(cur+1)))); }catch(e){} }
+
+/* 入力するたびに判定する（日本語入力の変換中は、確定してから判定） */
+function onInput(t){ A[t.dataset.id]=t.value; save(); if(M.saveId&&!M.unsaved){ M.unsaved=true; saveM(); } judge(); }
+document.addEventListener('input',e=>{ const t=e.target; if(!t.dataset||!t.dataset.id||e.isComposing) return; onInput(t); });
+document.addEventListener('compositionend',e=>{ const t=e.target; if(t.dataset&&t.dataset.id) setTimeout(()=>onInput(t),0); });
+/* ［Enter］で次の解答欄へ */
+document.addEventListener('keydown',e=>{ const t=e.target; if(t.tagName!=='INPUT'||e.key!=='Enter'||e.isComposing) return; e.preventDefault(); const all=[...document.querySelectorAll('input.in')], k=all.indexOf(t); if(k>=0&&k<all.length-1) all[k+1].focus(); });
+/* ページの切りかえ */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-page]'); if(b){ go(+b.dataset.page); return; }
+  const a=e.target.closest('[data-act]'); if(!a||a.disabled) return;
+  if(a.dataset.act==='cloudsave') cloudSave();
+  if(a.dataset.act==='copyurl') copyUrl();
+  if(a.dataset.act==='loadid'){ const el=document.getElementById('loadid'); loadById(el?el.value:'',false); }
+});
+/* やり直し（2回押すと、このページの答えだけ消える） */
+const rs=document.getElementById('reset'), RS_TXT=rs.textContent; let armed=false;
+rs.addEventListener('click',()=>{
+  if(!armed){ armed=true; rs.textContent='本当に消しますか？（もう一度押すと消える）'; setTimeout(()=>{armed=false;rs.textContent=RS_TXT;},4000); return; }
+  const K=PAGES[cur].key; Object.keys(A).forEach(k=>{ if(new RegExp('^'+K+'\\d').test(k)) delete A[k]; });
+  save(); if(M.saveId){ M.unsaved=true; saveM(); } armed=false; rs.textContent=RS_TXT; build();
+});
+/* ============ ★ ダッシュボード ============ */
+/* 問題ごとの状態：clear（正解）／ng（入力したが正解でない）／none（未入力） */
+function qState(pi,i){
+  const P=PAGES[pi], q=P.Q[i], K=P.key;
+  const ids=q.rows?[...Array(q.rows)].flatMap((_,r)=>q.in.map((_,c)=>`${K}${i}_${r}_${c}`)):q.in.map((_,c)=>`${K}${i}_${c}`);
+  if(qResult(pi,i).all) return 'ok';
+  return ids.some(id=>has(val(id)))?'ng':'none';
+}
+function renderDash(){
+  const rows=PAGES.map((P,pi)=>{
+    const n=score(pi), N=P.Q.length, pct=Math.round(n/N*100);
+    return `<div class="dprow"><button type="button" class="dpname" data-page="${pi}">${P.tab}</button><span class="meter" role="img" aria-label="${P.tab} 達成率${pct}%"><i style="width:${pct}%"></i></span><span class="dpc"><b>${pct}</b>%（${n} / ${N}）</span></div>
+    <div class="chips">${P.Q.map((_,i)=>{ const s=qState(pi,i); return `<span class="chip ${s}" title="問${i+1}：${s==='ok'?'正解':s==='ng'?'まだ正解していない':'未回答'}">問${i+1}</span>`; }).join('')}</div>`;
+  }).join('');
+  return `<div class="dbrow"><h2 class="dbt"><b>★ ダッシュボード</b></h2></div>
+  <p class="lead"><span class="box">各ページの達成率</span></p>
+  <div class="dlegend"><span><span class="chip ok"></span>正解</span><span><span class="chip ng"></span>まだ正解していない</span><span><span class="chip none"></span>未回答</span></div>
+  ${rows}
+  <p class="lead" style="margin-top:22px"><span class="box">振り返り</span></p>
+  <label class="rlab" for="ref_good">わかったこと・できるようになったこと</label><textarea id="ref_good" class="reftxt" data-id="ref_good" rows="3" maxlength="300">${esc(A.ref_good||'')}</textarea>
+  <label class="rlab" for="ref_hard">難しかったこと・もっと知りたいこと</label><textarea id="ref_hard" class="reftxt" data-id="ref_hard" rows="3" maxlength="300">${esc(A.ref_hard||'')}</textarea>
+  <p class="lead" style="margin-top:22px"><span class="box">保存</span></p>
+  <p class="snote">「保存する」を押すと保存IDが発行され、このページのURLの最後に付きます。URL（または保存ID）をメモしておくと、次回そのURLを開いて続きから取り組めます。</p>
+  <button type="button" class="btn" data-act="cloudsave"${cloud.busy?' disabled':''}>${M.saveId?'保存する（上書き）':'保存する'}</button><span class="cmsg ${cloud.err?'ng':'ok'}" role="status">${esc(cloud.msg)}</span>
+  ${M.saveId?`<div class="saveid-l">保存ID</div><div class="saveid"><b>${M.saveId}</b>${M.savedAt?`<span>最後に保存：${M.savedAt}</span>`:''}</div>
+  <div class="saveurl"><input id="saveurl" readonly value="${esc(saveIdUrl(M.saveId))}" aria-label="続きから取り組むためのURL"><button type="button" class="btn sm light" data-act="copyurl">URLをコピー</button>${cloud.copied?'<span class="snote" style="margin:0">コピーしました</span>':''}</div>
+  ${M.unsaved?'<p class="unsaved">保存したあとに取り組んだ内容があります。もう一度「保存する」を押そう。</p>':''}`:''}
+  <details class="loadbox"><summary>保存IDを入力して、続きから取り組む</summary><div class="row"><input id="loadid" maxlength="8" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="保存ID（8文字）" aria-label="保存ID"><button type="button" class="btn sm light" data-act="loadid">読み込む</button></div></details>`;
+}
+
+/* ============ 保存リンク（Firebase Cloud Firestore） ============ */
+/* IPアドレス・論理回路の教材と同じ保存先。記録の中に教材名（app）を入れて、別の教材の保存IDを読み込まないようにしている */
+const APP_ID='db-programming-intro';
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAgNLb2TKSD-a_yw6LrBbyeGNG2V_4H-Ko",
+  authDomain: "logic-circuit-basics.firebaseapp.com",
+  projectId: "logic-circuit-basics",
+  storageBucket: "logic-circuit-basics.firebasestorage.app",
+  messagingSenderId: "454179935245",
+  appId: "1:454179935245:web:0ba0c1ffdf736498f33144"
+};
+const FIREBASE_VER='12.19.0';
+const SAVE_ID_CHARS='abcdefghjkmnpqrstuvwxyz23456789', SAVE_ID_RE=/^[a-hj-km-np-z2-9]{8}$/;
+let fb=null;
+async function fbInit(){
+  if(fb) return fb;
+  const base=`https://www.gstatic.com/firebasejs/${FIREBASE_VER}/`;
+  const [appM,fsM]=await Promise.all([import(base+'firebase-app.js'),import(base+'firebase-firestore.js')]);
+  const app=appM.initializeApp(FIREBASE_CONFIG);
+  fb={db:fsM.getFirestore(app),doc:fsM.doc,getDoc:fsM.getDoc,setDoc:fsM.setDoc,serverTimestamp:fsM.serverTimestamp};
+  return fb;
+}
+function newSaveId(){ const a=new Uint8Array(8); crypto.getRandomValues(a); return Array.from(a,x=>SAVE_ID_CHARS[x%SAVE_ID_CHARS.length]).join(''); }
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function withRetry(fn){ let err; for(let i=0;i<3;i++){ try{ return await fn(); }catch(e){ err=e; if(e&&(e.code==='permission-denied'||e.code==='invalid-argument')) break; await sleep(700*(i+1)+Math.random()*700); } } throw err; }
+const saveIdUrl=id=>location.origin+location.pathname+location.search+'#'+id;
+function hashId(){ let h=''; try{ h=decodeURIComponent(location.hash.slice(1)); }catch(e){} h=h.trim().toLowerCase(); return SAVE_ID_RE.test(h)?h:''; }
+const nowStr=()=>{const d=new Date(),z=n=>String(n).padStart(2,'0');return `${d.getMonth()+1}/${d.getDate()} ${z(d.getHours())}:${z(d.getMinutes())}`;};
+function cloudErr(e){
+  if(e&&e.code==='too-large') return '記録が大きすぎて保存できませんでした。';
+  if(e&&e.code==='permission-denied') return '保存できませんでした（保存先の設定を先生に確認してください）。';
+  return 'インターネットに接続できなかったため、保存・読み込みができませんでした。少し待ってから、もう一度ためしてみよう。';
+}
+let cloud={busy:false,msg:'',err:false,copied:false};
+const redash=()=>{ if(cur===DASH) build(); };
+async function cloudSave(){
+  if(cloud.busy) return;
+  cloud={busy:true,msg:'保存しています…',err:false,copied:false}; redash();
+  try{
+    const F=await fbInit();
+    const data=JSON.stringify({app:APP_ID,A});
+    if(data.length>=30000) throw {code:'too-large'};
+    let id=SAVE_ID_RE.test(M.saveId||'')?M.saveId:'';
+    if(!id){
+      for(let k=0;k<5&&!id;k++){ const c=newSaveId(); const snap=await withRetry(()=>F.getDoc(F.doc(F.db,'saves',c))); if(!snap.exists()) id=c; }
+      if(!id) throw {code:'unavailable'};
+    }
+    await withRetry(()=>F.setDoc(F.doc(F.db,'saves',id),{v:1,data,updated:F.serverTimestamp()}));
+    M.saveId=id; M.unsaved=false; M.savedAt=nowStr(); saveM(); setHash();
+    cloud.msg=`保存しました（${M.savedAt}）`;
+  }catch(e){ cloud.err=true; cloud.msg=cloudErr(e); }
+  cloud.busy=false; redash();
+}
+function copyUrl(){
+  const box=document.getElementById('saveurl'), url=saveIdUrl(M.saveId);
+  const done=()=>{ cloud.copied=true; redash(); };
+  try{ navigator.clipboard.writeText(url).then(done,()=>{ box.select(); try{document.execCommand('copy');}catch(_){} done(); }); }
+  catch(_){ box.select(); try{document.execCommand('copy');}catch(__){} done(); }
+}
+const hasLocalProgress=()=>Object.values(A).some(has)||!!M.saveId;
+function applyLoaded(id,data){
+  A=data.A||{}; save(); M={saveId:id,savedAt:'',unsaved:false}; saveM();
+  cloud={busy:false,msg:'保存した記録を読み込みました',err:false,copied:false}; setHash(); showTop(false); build();
+}
+async function loadById(id,fromUrl){
+  id=String(id||'').trim().toLowerCase();
+  const back=()=>{ if(fromUrl) setHash(); };
+  if(!SAVE_ID_RE.test(id)){ showModal('保存IDが正しくありません','保存IDは8文字の英数字です。メモした保存IDをもう一度確かめよう。',[['閉じる',null]]); return; }
+  if(id===M.saveId&&fromUrl) return;
+  showModal('読み込んでいます…',`保存ID「${id}」の記録を探しています。`,[]);
+  let data=null;
+  try{ const F=await fbInit(); const snap=await withRetry(()=>F.getDoc(F.doc(F.db,'saves',id))); if(snap.exists()) data=JSON.parse(snap.data().data); }
+  catch(e){ showModal('読み込めませんでした',cloudErr(e),[['閉じる',back]]); return; }
+  if(!data){ showModal('記録が見つかりませんでした',`保存ID「${id}」の記録は見つかりませんでした。保存IDやURLをもう一度確かめよう。`,[['閉じる',back]]); return; }
+  if(data.app!==APP_ID){ showModal('この教材の記録ではありません',`保存ID「${id}」は、別の教材の記録です。この教材で保存したIDを入力しよう。`,[['閉じる',back]]); return; }
+  if(hasLocalProgress()&&id!==M.saveId){
+    showModal('保存した記録を読み込みますか？',`保存ID「${id}」の記録を読み込みます。この端末に残っている今の記録は、読み込んだ記録に置き換わります。`,[['読み込む',()=>applyLoaded(id,data),true],['やめる',back]]);
+    return;
+  }
+  hideModal(); applyLoaded(id,data);
+}
+function showModal(title,text,buttons){
+  let m=document.getElementById('cmodal');
+  if(!m){ m=document.createElement('div'); m.id='cmodal'; m.className='cmodal'; document.body.appendChild(m); }
+  m.innerHTML=`<div class="cm-box" role="dialog" aria-modal="true" aria-labelledby="cm-t"><h3 id="cm-t">${esc(title)}</h3><p>${esc(text)}</p><div class="cm-btns">${buttons.map((b,i)=>`<button type="button" class="btn${b[2]?'':' light'}" data-cm="${i}">${esc(b[0])}</button>`).join('')}</div></div>`;
+  m.querySelectorAll('[data-cm]').forEach(el=>el.addEventListener('click',()=>{ const f=buttons[+el.dataset.cm][1]; hideModal(); if(f) f(); }));
+  m.classList.add('show'); const first=m.querySelector('button'); if(first) first.focus();
+}
+function hideModal(){ const m=document.getElementById('cmodal'); if(m) m.classList.remove('show'); }
+window.addEventListener('hashchange',()=>{ const id=hashId(); if(id&&id!==M.saveId) loadById(id,true); });
+
+/* トップページ：URLに#（ページ番号や保存ID）がないときに表示する */
+function showTop(on){ document.body.classList.toggle('is-top',on); window.scrollTo({top:0}); }
+document.getElementById('start').addEventListener('click',()=>{ showTop(false); setHash(); });
+document.getElementById('apptitle').addEventListener('click',()=>showTop(true));
+showTop(!location.hash);
+build();
+/* URLに保存IDが付いていたら読み込む。なければ、保存IDがある人はURLに付けておく */
+(function boot(){ const id=hashId(); if(id){ loadById(id,true); return; } if(M.saveId&&!/^#([1-9]|dash)$/.test(location.hash)) setHash(); })();
+</script>
+</body>
+</html>
