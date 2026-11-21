@@ -151,7 +151,7 @@ h1#apptitle{cursor:pointer}
 <nav class="pager" id="pager" aria-label="ページ"></nav>
 <div class="sheet">
   <div id="page"></div>
-  <div class="foot"><span id="ansbtn"></span><button class="linkbtn" id="reset" type="button">このページの答えを消して最初からやり直す</button></div>
+  <div class="foot"><span id="ansbtn"></span><button class="linkbtn" id="reset" type="button">記録を消して最初からやり直す</button></div>
   <div id="anslist"></div>
 </div>
 <div class="nextp" id="nextp"></div>
@@ -281,7 +281,6 @@ const sp=s=>esc(s).split('■').join('<span class="sp"></span>');
 const inp=(id,f)=>`<input class="in${f.k==='n'?' n':''}${f.w?' '+f.w:''}" id="${id}" data-id="${id}" autocomplete="off" maxlength="30" placeholder="${f.k==='n'?'？':f.label}" aria-label="${f.label}" value="${esc(A[id]||'')}"${f.k==='n'?' inputmode="decimal"':''}>`;
 function build(){
   document.getElementById('pager').innerHTML=PAGES.map((p,i)=>`<button type="button" data-page="${i}" aria-pressed="${i===cur}">${p.tab}</button>`).join('')+`<button type="button" class="dash" data-page="${DASH}" aria-pressed="${cur===DASH}" title="ダッシュボード" aria-label="ダッシュボード">★</button>`;
-  document.querySelector('.foot').style.display=cur===DASH?'none':'';
   if(cur===DASH){ document.getElementById('ansbtn').innerHTML=''; document.getElementById('anslist').innerHTML=''; document.getElementById('page').innerHTML=renderDash(); document.getElementById('nextp').innerHTML=''; return; }
   const P=PAGES[cur], K=P.key;
   let h=`<div class="dbrow"><h2 class="dbt"><b>${P.db}</b></h2><span class="score" id="score" aria-live="polite"></span></div>
@@ -350,12 +349,14 @@ document.addEventListener('click',e=>{
   if(a.dataset.act==='copyurl') copyUrl();
   if(a.dataset.act==='loadid'){ const el=document.getElementById('loadid'); loadById(el?el.value:'',false); }
 });
-/* やり直し（2回押すと、このページの答えだけ消える） */
+/* 記録を消して最初からやり直す（2回押すと、すべてのページの答え・振り返り・保存ID（URLの#）を消してトップページへ） */
 const rs=document.getElementById('reset'), RS_TXT=rs.textContent; let armed=false;
 rs.addEventListener('click',()=>{
-  if(!armed){ armed=true; rs.textContent='本当に消しますか？（もう一度押すと消える）'; setTimeout(()=>{armed=false;rs.textContent=RS_TXT;},4000); return; }
-  const K=PAGES[cur].key; Object.keys(A).forEach(k=>{ if(new RegExp('^'+K+'\\d').test(k)) delete A[k]; });
-  save(); if(M.saveId){ M.unsaved=true; saveM(); } armed=false; rs.textContent=RS_TXT; build();
+  if(!armed){ armed=true; rs.textContent='本当に消去しますか？（もう一度押すと消去）'; setTimeout(()=>{armed=false;rs.textContent=RS_TXT;},4000); return; }
+  A={}; save(); M={saveId:'',savedAt:'',unsaved:false,cur:0}; saveM();
+  cloud={busy:false,msg:'',err:false,copied:false}; showAns=false; cur=0;
+  try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){}
+  armed=false; rs.textContent=RS_TXT; build(); showTop(true);
 });
 /* ============ ★ ダッシュボード ============ */
 /* 問題ごとの状態：clear（正解）／ng（入力したが正解でない）／none（未入力） */
